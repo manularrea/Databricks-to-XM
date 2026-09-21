@@ -16,7 +16,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("usuario", "docente")
+dbutils.widgets.text("usuario", "juanbedoya")
 dbutils.widgets.text("archivo", "DemandaPerdidas.xlsx")
 
 usuario = dbutils.widgets.get("usuario").strip().lower()
