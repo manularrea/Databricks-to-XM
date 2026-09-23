@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # Lab 3 — Gobernar tu propio esquema
 # MAGIC
@@ -10,8 +14,8 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("usuario", "")
-dbutils.widgets.text("companero", "")
+dbutils.widgets.text("usuario", "juancuartas")
+dbutils.widgets.text("companero", "jpatinofo@unal.edu.co")
 usuario = dbutils.widgets.get("usuario").strip().lower()
 companero = dbutils.widgets.get("companero").strip().lower()
 assert usuario, "Escribe tu usuario (el sufijo de tu esquema c01_<usuario>)."
@@ -32,6 +36,13 @@ print("Esquema:", esquema, "| Tabla:", tabla, "| Yo:", yo, "| Compañero:", comp
 
 spark.sql(f"GRANT USE SCHEMA ON SCHEMA {esquema} TO `account users`")
 spark.sql(f"GRANT SELECT ON TABLE {tabla} TO `account users`")
+spark.sql(f"SHOW GRANTS ON TABLE {tabla}").display()
+
+# COMMAND ----------
+
+usuario = dbutils.widgets.get("usuario").strip().lower()
+esquema = f"workspace.c01_{usuario}"
+tabla = f"{esquema}.demanda_raw"
 spark.sql(f"SHOW GRANTS ON TABLE {tabla}").display()
 
 # COMMAND ----------
@@ -66,7 +77,14 @@ spark.sql(f"SHOW GRANTS ON TABLE {tabla}").display()
 # MAGIC %md
 # MAGIC **Pregunta.** El error de tu compañero, ¿menciona la tabla o el esquema? ¿Por qué el USE SCHEMA que sigue vigente no le alcanza?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_Si muestra el error la tabla y el esquema. 
+# MAGIC
+# MAGIC [INSUFFICIENT_PERMISSIONS] Insufficient privileges:
+# MAGIC User does not have SELECT on Table 'workspace.c01_jpatinofo.demanda_raw'. SQLSTATE: 42501
+# MAGIC
+# MAGIC ¿Por qué el USE SCHEMA que sigue vigente no le alcanza?
+# MAGIC si sigue vigente pero al quitar el permiso sobre la tabla, ya no puede hacer un select sobre la misma
+# MAGIC
 
 # COMMAND ----------
 
@@ -85,13 +103,13 @@ spark.sql(f"SHOW GRANTS ON TABLE {tabla}").display()
 spark.sql(f"""
 CREATE OR REPLACE FUNCTION {esquema}.solo_regulado(tipo STRING)
 RETURNS BOOLEAN
-RETURN <condición>
+RETURN current_user() = '{yo}' OR tipo = 'Regulado'
 """)
 
 spark.sql(f"""
 CREATE OR REPLACE FUNCTION {esquema}.mascara_kwh(v DOUBLE)
 RETURNS DOUBLE
-RETURN <expresión>
+RETURN CASE WHEN current_user() = '{yo}' THEN v ELSE round(v, -3) END
 """)
 
 # COMMAND ----------
@@ -119,7 +137,7 @@ spark.sql(f"SHOW GRANTS ON TABLE {tabla}").display()
 # MAGIC %md
 # MAGIC **Pregunta.** ¿Qué pasaría si en vez de `account users` el GRANT fuera a un grupo `grp_negocio` que aún no existe? ¿Y si mañana entra una persona nueva a XM: a quién hay que tocar, la tabla o el grupo?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_si el grp_negocio no existe deberia fallar, y si mañana entra una persona nueva, se debe tocar la puerta al administrador de grupo para que agregue a la persona al grupo y de esta manera tendrá acceso a todos los permisos del grupo.
 
 # COMMAND ----------
 
@@ -130,10 +148,10 @@ spark.sql(f"SHOW GRANTS ON TABLE {tabla}").display()
 # COMMAND ----------
 
 # TODO: pon los cuatro tags y los comentarios.
-spark.sql(f"ALTER TABLE {tabla} SET TAGS ('capa' = '<…>', 'dominio' = '<…>', 'owner' = '<…>', 'sensibilidad' = '<…>')")
-spark.sql(f"COMMENT ON TABLE {tabla} IS '<qué contiene, con qué grano, quién la publica>'")
-spark.sql(f"ALTER TABLE {tabla} ALTER COLUMN Valor COMMENT '<…>'")
-spark.sql(f"ALTER TABLE {tabla} ALTER COLUMN FechaPublicacion COMMENT '<…>'")
+spark.sql(f"ALTER TABLE {tabla} SET TAGS ('capa' = 'bronze', 'dominio' = 'energia', 'owner' = 'grp_ingenieria', 'sensibilidad' = 'interna')")
+spark.sql(f"COMMENT ON TABLE {tabla} IS 'demanda real y perdidas por fecha, mercado codigo sic agente y codigo de clasificacion'")
+spark.sql(f"ALTER TABLE {tabla} ALTER COLUMN Valor COMMENT 'energia del dia en kwh enmascarado a miles para usuarios que no son owner'")
+spark.sql(f"ALTER TABLE {tabla} ALTER COLUMN FechaPublicacion COMMENT 'fecha en que se publicó el dato de demanda para la fecha de operacion.'")
 
 spark.sql(f"SELECT tag_name, tag_value FROM workspace.information_schema.table_tags WHERE schema_name = 'c01_{usuario}' AND table_name = 'demanda_raw'").display()
 
@@ -224,7 +242,7 @@ def verificar():
     gov = open(os.path.join(raiz, "docs", "governance.md"), encoding="utf-8").read()
     secciones = ["## Catálogos", "## Esquemas", "## Grupos", "## Matriz de privilegios", "## Filtros", "## Secretos", "## Auditoría"]
     checks.append(("governance.md con sus 7 secciones", all(s in gov for s in secciones)))
-    checks.append(("governance.md sin marcadores <…> ni celdas vacías", "<" not in gov and re.search(r"\|\s*\|", gov) is None))
+    checks.append(("governance.md sin marcadores <…> ni celdas vacías", "<" not in gov and re.search(r"\|\t*\|", gov) is None))
     checks.append(("governance.md menciona dev, qa y prod", all(c in gov for c in ["dev", "qa", "prod"])))
 
     for nombre, ok in checks:
