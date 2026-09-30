@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # Clase 6 — Modelado de plata: de reporte a tabla analítica
 # MAGIC
@@ -30,7 +34,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("usuario", "")
+dbutils.widgets.text("usuario", "docente")
 usuario = dbutils.widgets.get("usuario").strip().lower()
 assert usuario, "Escribe tu usuario (el sufijo de tu esquema c01_<usuario>)."
 
@@ -115,6 +119,11 @@ from pyspark.sql import functions as F
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ![a0ea62a4-6d50-46cf-bb76-ef236b492992.png](./a0ea62a4-6d50-46cf-bb76-ef236b492992.png "a0ea62a4-6d50-46cf-bb76-ef236b492992.png")
+
+# COMMAND ----------
+
 fuente = spark.table(T_VALIDADA).filter("_source_file <> 'sintetico_lab05'")
 print("Filas fuente (largo):", fuente.count())  # 145.408
 fuente.createOrReplaceTempView("fuente_largo")
@@ -183,6 +192,16 @@ ancho.limit(5).display()
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ![38c37cde-11d5-40c3-8d84-661f73300e84.png](./38c37cde-11d5-40c3-8d84-661f73300e84.png "38c37cde-11d5-40c3-8d84-661f73300e84.png")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ![2a9d6abd-c0e6-4e0f-8d18-cef5602705fe.png](./2a9d6abd-c0e6-4e0f-8d18-cef5602705fe.png "2a9d6abd-c0e6-4e0f-8d18-cef5602705fe.png")
+
+# COMMAND ----------
+
 spark.sql(f"DROP TABLE IF EXISTS {T_DIARIA}")  # empezamos limpio para leer el historial desde la versión 0
 silver.merge_demanda_diaria(spark, ancho, T_DIARIA)  # primera corrida: todo se inserta
 silver.merge_demanda_diaria(spark, ancho, T_DIARIA)  # segunda corrida: nada cambia
@@ -245,6 +264,11 @@ print("Filas en demanda_diaria:", spark.table(T_DIARIA).count())  # sigue en 72.
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ![950e1fff-bb53-4f50-aa6d-b9d584f7a169.png](./950e1fff-bb53-4f50-aa6d-b9d584f7a169.png "950e1fff-bb53-4f50-aa6d-b9d584f7a169.png")
+
+# COMMAND ----------
+
 llave_ejemplo = republicados.select(*silver.LLAVE).first()
 cond = " AND ".join(f"{c} = '{llave_ejemplo[c]}'" for c in silver.LLAVE)
 spark.sql(f"""
@@ -286,6 +310,11 @@ print("Versión actual de la tabla (lo que un entrenamiento guardaría):", versi
 # MAGIC
 # MAGIC **TODO en `src/xm_demanda/silver/transform.py`:** implementa `normalizar_texto` (mayúsculas, sin tildes, espacios
 # MAGIC colapsados; `None` → `None`). Guarda y ejecuta la celda siguiente.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ![55acf045-2c09-4e97-9900-87d00a31be8b.png](./55acf045-2c09-4e97-9900-87d00a31be8b.png "55acf045-2c09-4e97-9900-87d00a31be8b.png")
 
 # COMMAND ----------
 
@@ -385,6 +414,11 @@ print("Después:", detalle_despues)
 # MAGIC ## 7 · El contrato, dentro del catálogo
 # MAGIC Lo mismo que hiciste en la clase 3 con bronce: comentario, comentarios de columna y tags. Plata es la tabla que
 # MAGIC más gente va a leer; su documentación vive donde la ven.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ![0b2b6c61-e62d-436d-9528-5b19bd6cf9ef.png](./0b2b6c61-e62d-436d-9528-5b19bd6cf9ef.png "0b2b6c61-e62d-436d-9528-5b19bd6cf9ef.png")
 
 # COMMAND ----------
 
