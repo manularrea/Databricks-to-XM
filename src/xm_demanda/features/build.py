@@ -105,7 +105,7 @@ def agregar_ventanas(df, ventanas: list[int]):
 
     w = _ventana_serie()
     for n in ventanas:
-        pasado = w.rowsBetween(-n, -1)
+        pasado = w.rowsBetween(-n + 1, 0)
         df = df.withColumn(f"media_{n}", F.avg(MEDIDA).over(pasado))
         df = df.withColumn(f"desv_{n}", F.stddev(MEDIDA).over(pasado))
     return df
