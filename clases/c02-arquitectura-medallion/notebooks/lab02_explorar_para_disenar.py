@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # Lab 2 — Explorar para diseñar
 # MAGIC
@@ -9,7 +13,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("usuario", "")
+dbutils.widgets.text("usuario", "juancuartas")
 usuario = dbutils.widgets.get("usuario").strip().lower()
 assert usuario, "Escribe tu usuario en el widget (o 'docente' para usar la tabla compartida)."
 
@@ -43,7 +47,7 @@ filas_por_serie_dia.display()
 # MAGIC **Pregunta de diseño 1.** Plata será una fila por serie-día con `demanda_real_kwh` y `perdidas_kwh`.
 # MAGIC ¿Qué debe pasar si un día llega solo una de las dos filas? (nulo, rechazar, cuarentena)
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Deberia ser 0 en la variable que no llegue valor es decir en demanda_real_kwh o perdidas_kwh
 
 # COMMAND ----------
 
@@ -73,7 +77,8 @@ GROUP BY FechaPublicacion ORDER BY FechaPublicacion
 # MAGIC **Pregunta de diseño 2.** Hoy cada `Fecha` tiene una sola `FechaPublicacion`, pero el 25 de julio se publicaron 200 días de golpe.
 # MAGIC Cuando el próximo archivo traiga días que ya existen, ¿bronce sobrescribe o acumula? ¿Quién decide cuál versión es la vigente?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Cuando llegan los datos para una nueva  fecha de publicación se sobreescriben los datos. Siempre se debe tomar la ultima fecha de publicacion para cada día.
+# MAGIC Brince debe sobreescribir los datos
 
 # COMMAND ----------
 
@@ -103,7 +108,7 @@ print("Series incompletas:", n_incompletas)
 # MAGIC **Pregunta de diseño 3.** ¿Qué hace plata con una serie que aparece o desaparece a mitad de periodo?
 # MAGIC (rellenar con cero, marcar `activa = false`, excluir del modelo)
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Deberia rellenar con cero el resto de días (activa =false)
 
 # COMMAND ----------
 
@@ -130,7 +135,8 @@ por_tipo.display()
 # MAGIC **Pregunta de diseño 4.** 29 series regulan el 69 % de la energía; 326 series no reguladas son pequeñas y ruidosas.
 # MAGIC ¿Un modelo global para todo, uno por tipo de mercado, o uno por serie? ¿Qué métrica de error es justa entre escalas tan distintas?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Se podría realizar un modelo por tipo de mercado.  
+# MAGIC Medidas de error como MAPE o MASE se deben ajustar bien.
 
 # COMMAND ----------
 
@@ -154,7 +160,7 @@ print("Serie-días con demanda 0:", n_ceros)
 # MAGIC %md
 # MAGIC **Pregunta de diseño 5.** ¿Un cero es consumo real, ausencia de medida o error? ¿Qué regla de calidad va en plata y qué se hace con la fila (warn, cuarentena, drop)?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Si es comun que se presenten cero, principalmente si es en tipos de dias especificos. las reglas de calidad podrian ser que los valores sean negativos. 
 
 # COMMAND ----------
 
@@ -183,7 +189,7 @@ perdidas.display()
 # MAGIC %md
 # MAGIC **Pregunta de diseño 6.** Pérdidas ≈ 1,5 % de la demanda y nunca mayores. ¿Va como regla de calidad (`perdidas <= demanda`)? ¿Se pronostican las pérdidas o solo la demanda?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Si las perdidas siempre deben ser menores a la demanda. Las perdidas tambien seria relevante pronosticarlas, asi sea de forma independiente.
 
 # COMMAND ----------
 
