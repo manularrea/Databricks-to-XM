@@ -143,7 +143,7 @@ print("Idempotente: 145.408 filas las dos veces")
 # MAGIC %md
 # MAGIC **Pregunta.** ¿Qué pasaría si borras la carpeta `_checkpoints/bronze` y vuelves a correr? ¿Y si la borras junto con la tabla?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Si borro solo el checkpoint, Auto Loader olvida qué procesó y vuelve a cargar los 23 archivos: bronce queda con el doble de filas (append). Si borro checkpoint y tabla, reconstruyo desde landing y llego al mismo estado: esa es la operación legítima de reproceso.
 
 # COMMAND ----------
 
@@ -181,7 +181,7 @@ FROM {tabla} WHERE _source_file LIKE '%raw_v2%' GROUP BY ALL
 # MAGIC
 # MAGIC ¿Por qué el valor rescatado llega como texto dentro de un JSON y no como columna? ¿Qué modo de `schemaEvolutionMode` lo habría agregado como columna, y qué riesgo tiene?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Con esquema explícito y modo rescue, Auto Loader no altera el esquema: lo que no encaja se serializa como JSON en `_rescued_data` (por eso llega como texto y hay que castear). `addNewColumns` habría agregado `ValorKwh` como columna nueva y reiniciado el stream; el riesgo es que bronce acumule columnas duplicadas (`Valor` y `ValorKwh`) con el mismo significado y que plata tenga que adivinar cuál usar. Con alias en `src` la decisión queda escrita y probada.
 
 # COMMAND ----------
 

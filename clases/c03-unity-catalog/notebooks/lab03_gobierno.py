@@ -66,7 +66,7 @@ spark.sql(f"SHOW GRANTS ON TABLE {tabla}").display()
 # MAGIC %md
 # MAGIC **Pregunta.** El error de tu compañero, ¿menciona la tabla o el esquema? ¿Por qué el USE SCHEMA que sigue vigente no le alcanza?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Menciona la tabla: `PERMISSION_DENIED: User does not have SELECT on Table 'workspace.c01_<usuario>.demanda_raw'`. USE SCHEMA solo permite entrar al esquema y listar lo que hay; leer una tabla exige SELECT sobre ella (o sobre el esquema, heredado).
 
 # COMMAND ----------
 
@@ -81,17 +81,16 @@ spark.sql(f"SHOW GRANTS ON TABLE {tabla}").display()
 
 # COMMAND ----------
 
-# TODO: completa las dos funciones. Pista: current_user() devuelve tu correo; la variable `yo` ya lo tiene.
 spark.sql(f"""
 CREATE OR REPLACE FUNCTION {esquema}.solo_regulado(tipo STRING)
 RETURNS BOOLEAN
-RETURN <condición>
+RETURN current_user() = '{yo}' OR tipo = 'Regulado'
 """)
 
 spark.sql(f"""
 CREATE OR REPLACE FUNCTION {esquema}.mascara_kwh(v DOUBLE)
 RETURNS DOUBLE
-RETURN <expresión>
+RETURN CASE WHEN current_user() = '{yo}' THEN v ELSE round(v, -3) END
 """)
 
 # COMMAND ----------
@@ -119,7 +118,7 @@ spark.sql(f"SHOW GRANTS ON TABLE {tabla}").display()
 # MAGIC %md
 # MAGIC **Pregunta.** ¿Qué pasaría si en vez de `account users` el GRANT fuera a un grupo `grp_negocio` que aún no existe? ¿Y si mañana entra una persona nueva a XM: a quién hay que tocar, la tabla o el grupo?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ El GRANT a un grupo inexistente falla (el principal debe existir). Con grupos, la persona nueva se agrega al grupo y hereda todo; no se toca ninguna tabla. Por eso: privilegios a grupos, nunca a personas.
 
 # COMMAND ----------
 
@@ -129,11 +128,10 @@ spark.sql(f"SHOW GRANTS ON TABLE {tabla}").display()
 
 # COMMAND ----------
 
-# TODO: pon los cuatro tags y los comentarios.
-spark.sql(f"ALTER TABLE {tabla} SET TAGS ('capa' = '<…>', 'dominio' = '<…>', 'owner' = '<…>', 'sensibilidad' = '<…>')")
-spark.sql(f"COMMENT ON TABLE {tabla} IS '<qué contiene, con qué grano, quién la publica>'")
-spark.sql(f"ALTER TABLE {tabla} ALTER COLUMN Valor COMMENT '<…>'")
-spark.sql(f"ALTER TABLE {tabla} ALTER COLUMN FechaPublicacion COMMENT '<…>'")
+spark.sql(f"ALTER TABLE {tabla} SET TAGS ('capa' = 'bronze', 'dominio' = 'energia', 'owner' = 'grp_ingenieria', 'sensibilidad' = 'interna')")
+spark.sql(f"COMMENT ON TABLE {tabla} IS 'Demanda real y pérdidas de energía por agente, mercado, tipo de mercado y CIIU, una fila por serie-día-variable, tal como publica XM'")
+spark.sql(f"ALTER TABLE {tabla} ALTER COLUMN Valor COMMENT 'kWh del día; enmascarado a miles para usuarios que no son owner'")
+spark.sql(f"ALTER TABLE {tabla} ALTER COLUMN FechaPublicacion COMMENT 'Fecha en que XM publicó el registro; retraso de 5 a 205 días respecto a Fecha'")
 
 spark.sql(f"SELECT tag_name, tag_value FROM workspace.information_schema.table_tags WHERE schema_name = 'c01_{usuario}' AND table_name = 'demanda_raw'").display()
 

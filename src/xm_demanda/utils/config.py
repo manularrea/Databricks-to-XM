@@ -47,6 +47,15 @@ def validar_config(cfg: dict) -> None:
     Ejemplos: una config completa pasa en silencio; {"catalog": "dev", "db_password": "x"}
     lanza ValueError (falta 'schemas' y 'db_password' parece un secreto).
     """
-    # TODO (lab 8, sección 2): implementar. Pistas: LLAVES_REQUERIDAS, _llaves_anidadas(cfg)
-    # y PALABRAS_SECRETO (compara en minúsculas). Dos mensajes distintos: "falta" y "secreto".
-    raise NotImplementedError("validar_config: completa esta función (lab 8, sección 2)")
+    faltan = [k for k in LLAVES_REQUERIDAS if k not in cfg]
+    if faltan:
+        raise ValueError(f"Configuración incompleta: falta {faltan}")
+    sospechosas = [
+        ruta
+        for ruta in _llaves_anidadas(cfg)
+        if any(p in ruta.lower() for p in PALABRAS_SECRETO)
+    ]
+    if sospechosas:
+        raise ValueError(
+            f"Parece un secreto en texto plano: {sospechosas}. Usa un secret scope, no conf/."
+        )
