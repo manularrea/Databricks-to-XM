@@ -42,8 +42,16 @@ def politica(tarea: str) -> dict:
     Devuelve las llaves del formato de tarea de la Jobs API (max_retries, min_retry_interval_millis,
     retry_on_timeout, timeout_seconds, run_if).
     """
-    # TODO (lab 12, sección 3): implementar. Tres casos: "inferencia", "chequeo" y el resto.
-    raise NotImplementedError("politica: completa esta función (lab 12, sección 3)")
+    if tarea == "inferencia":
+        return {
+            "max_retries": 2,
+            "min_retry_interval_millis": 60_000,
+            "retry_on_timeout": True,
+            "timeout_seconds": TIMEOUT_DEFECTO_S,
+        }
+    if tarea == "chequeo":
+        return {"run_if": "ALL_DONE", "timeout_seconds": 600}
+    return {"timeout_seconds": TIMEOUT_DEFECTO_S}
 
 
 def definicion_job(usuario: str, ruta_tareas: str, email: str | None = None) -> dict:
