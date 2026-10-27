@@ -131,11 +131,12 @@ Hitos (según el programa del curso): H1 pregunta analítica · H2 arquitectura 
 - **Sector:** el pronóstico como servicio interno (AEMO, Octopus Energy en la plataforma de energía de Databricks); qué consumidores tiene en XM (planeación, seguimiento, gerencia, simulación) y qué canal necesita cada uno.
 - **Entregable:** tabla de pronósticos, vista observado vs. estimado, endpoint consultado y app leyendo la vista. Hito 5 cerrado.
 
-### Clase 12 — Orquestación con Lakeflow Jobs
-- **Teoría:** jobs multi-tarea, dependencias, parámetros, reintentos, timeouts, notificaciones; triggers por calendario y por llegada de archivo; concurrencia; cuándo integrar Azure Data Factory o Airflow y cuándo no.
-- **Práctica:** job `ingesta → calidad → features → inferencia` con alertas; una tarea que falla en silencio se diagnostica desde la UI y los logs.
+### Clase 12 — Orden del lakehouse, Genie y orquestación con Lakeflow Jobs
+- **Apertura:** cómo ordenar catálogos, esquemas y objetos en Unity Catalog según el consumidor (tablero, app, batch, endpoint), dónde viven los modelos y los experimentos de MLflow, y por qué el código del proyecto va en `src/`. Genie como consumidor más sobre la capa curada.
+- **Teoría:** jobs multi-tarea, dependencias, parámetros, task values, tareas condicionales (If/else), reintentos, timeouts, `run_if`, notificaciones; triggers por calendario y por llegada de archivo; cola y concurrencia; Repair run; cuándo integrar Azure Data Factory o Airflow y cuándo no.
+- **Práctica:** el job diario `bronce → hay_datos_nuevos → calidad → plata → oro → inferencia → chequeo` se define como código (`src/xm_demanda/orquestacion`), se crea por API y se ejecuta; una falla silenciosa (todo en verde con datos viejos) se vuelve visible con el chequeo de frescura y se resuelve con Repair run cuando llega el archivo tarde.
 - **Sector:** alinear el job al ciclo real de publicación de datos del mercado; qué pasa con el pronóstico cuando la fuente llega tarde.
-- **Entregable:** job programado con notificaciones. Hito 6 abierto.
+- **Entregable:** `politica()` implementada y job creado con notificaciones. Hito 6 abierto.
 
 ### Clase 13 — Asset Bundles y ambientes
 - **Teoría:** Declarative Automation Bundles (Databricks Asset Bundles): estructura, targets, variables, recursos; service principals por ambiente; DEV/QA/PROD en Azure Databricks (workspaces separados) vs. su simulación con catálogos en Free Edition.
