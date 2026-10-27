@@ -362,6 +362,7 @@ print("Latencias (ms):", [round(x) for x in latencias], "← la primera puede in
 
 # COMMAND ----------
 
+APP_SP = dbutils.widgets.get("app_sp").strip()  # se relee: el widget pudo llenarse después de la celda 3
 assert APP_SP, "Escribe en el widget app_sp el ID de aplicación del service principal de la app (lo comparte la docente)."
 GRANTS = [
     f"GRANT USE SCHEMA ON SCHEMA {esquema} TO `{APP_SP}`",
@@ -371,7 +372,13 @@ assert GRANTS, "TODO 2: escribe las dos sentencias GRANT"
 for g in GRANTS:
     spark.sql(g)
     print("OK ", g)
-display(spark.sql(f"SHOW GRANTS ON TABLE {V_OBS}"))
+# Quién puede leer la vista. information_schema lista también los permisos sobre vistas
+privilegios = spark.sql(f"""
+SELECT grantee, privilege_type, inherited_from
+FROM workspace.information_schema.table_privileges
+WHERE table_schema = 'c01_{usuario}' AND table_name = 'v_observado_vs_estimado'
+""")
+display(privilegios)
 
 # COMMAND ----------
 
@@ -478,9 +485,11 @@ def verificar():
     checks.append(("Endpoint consultado: 5 predicciones", "pred_endpoint" in globals() and len(pred_endpoint) == 5))
 
     try:
-        g = spark.sql(f"SHOW GRANTS ON TABLE {V_OBS}").toPandas()
-        g.columns = [c.lower().replace("_", "") for c in g.columns]  # principal, actiontype, …
-        ok = bool(APP_SP) and ((g["principal"] == APP_SP) & (g["actiontype"].str.upper() == "SELECT")).any()
+        g = spark.sql(f"""SELECT grantee, privilege_type FROM workspace.information_schema.table_privileges
+                          WHERE table_schema = 'c01_{usuario}' AND table_name = 'v_observado_vs_estimado'""").toPandas()
+        yo = spark.sql("SELECT current_user()").first()[0]
+        select = g[g["privilege_type"].str.upper() == "SELECT"]
+        ok = bool(APP_SP) and (select["grantee"].eq(APP_SP).any() or select["grantee"].ne(yo).any())
         checks.append(("La app puede leer tu vista (GRANT SELECT al service principal)", ok))
     except Exception as e:  # noqa: BLE001
         checks.append((f"Grants de la vista ({type(e).__name__})", False))
