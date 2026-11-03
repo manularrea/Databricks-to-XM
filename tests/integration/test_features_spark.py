@@ -97,7 +97,10 @@ def test_banderas(features):
     assert sorted(r.n for r in maximos.collect()) == [60, 90, 120]
 
 
-# TODO (lab 8, sección 5): escribe test_media_7_nunca_incluye_el_dia_t(features).
-# Pista: recalcula la media con Window.rowsBetween(-7, -1) y compara con media_7; además,
-# comprueba que media_7 NO coincide con la ventana (-6, 0) en todas las filas (así sabes
-# que el test distingue la versión correcta de la que tiene fuga).
+def test_media_7_nunca_incluye_el_dia_t(features):
+    w = Window.partitionBy(*fb.LLAVE_SERIE).orderBy("fecha")
+    con = features.withColumn("_ok", F.avg(fb.MEDIDA).over(w.rowsBetween(-7, -1)))
+    con = con.withColumn("_fuga", F.avg(fb.MEDIDA).over(w.rowsBetween(-6, 0)))
+    assert con.filter("ABS(media_7 - _ok) > 1e-6").count() == 0
+    # El test debe distinguir la versión correcta de la que tiene fuga:
+    assert con.filter("ABS(media_7 - _fuga) > 1e-6").count() > 0

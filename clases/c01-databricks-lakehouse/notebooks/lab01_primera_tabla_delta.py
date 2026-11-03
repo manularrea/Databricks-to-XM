@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # Lab 1 — Primer activo gobernado en el Lakehouse
 # MAGIC
@@ -12,7 +16,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("usuario", "")
+dbutils.widgets.text("usuario", "docente")
 dbutils.widgets.text("archivo", "DemandaPerdidas.xlsx")
 
 usuario = dbutils.widgets.get("usuario").strip().lower()
@@ -135,4 +139,30 @@ verificar()
 
 # COMMAND ----------
 
-# Escribe aquí tu consulta
+spark.sql(f"""
+WITH por_serie AS (
+  SELECT CodigoSICAgente, MercadoComercializacion, TipoMercado, ClasificacionIndustrial,
+         count(DISTINCT Fecha) AS dias_con_datos
+  FROM {tabla}
+  WHERE CodigoVariable = 'DdaReal'
+  GROUP BY 1, 2, 3, 4
+),
+total AS (SELECT count(DISTINCT Fecha) AS dias_totales FROM {tabla})
+SELECT s.*, t.dias_totales - s.dias_con_datos AS dias_faltantes
+FROM por_serie s CROSS JOIN total t
+WHERE s.dias_con_datos < t.dias_totales
+ORDER BY dias_faltantes DESC
+""").display()
+
+# COMMAND ----------
+
+spark.sql(f"""
+SELECT sum(CASE WHEN dias = 206 THEN 1 ELSE 0 END) AS series_completas,
+       sum(CASE WHEN dias < 206 THEN 1 ELSE 0 END) AS series_incompletas
+FROM (
+  SELECT CodigoSICAgente, MercadoComercializacion, TipoMercado, ClasificacionIndustrial,
+         count(DISTINCT Fecha) AS dias
+  FROM {tabla} WHERE CodigoVariable = 'DdaReal'
+  GROUP BY 1, 2, 3, 4
+)
+""").display()

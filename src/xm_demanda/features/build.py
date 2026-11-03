@@ -40,10 +40,18 @@ def columnas_contrato(cfg: dict) -> list[str]:
     Pura: se prueba sin Spark y la usa verificar() en el lab y el notebook de producción.
     [llave, medida, categóricas, calendario, lags, ventanas, banderas, objetivo, _features_built_at]
     """
-    # TODO (lab 8, sección 3): implementar con LLAVE, MEDIDA, COLUMNAS_CATEGORICAS,
-    # COLUMNAS_CALENDARIO, nombres_lags(m["lags"]), nombres_ventanas(m["ventanas"]),
-    # COLUMNAS_BANDERAS, f"y_h{m['horizon_days']}" y "_features_built_at", con m = cfg["modelo"].
-    raise NotImplementedError("columnas_contrato: completa esta función (lab 8, sección 3)")
+    m = cfg["modelo"]
+    return [
+        *LLAVE,
+        MEDIDA,
+        *COLUMNAS_CATEGORICAS,
+        *COLUMNAS_CALENDARIO,
+        *nombres_lags(m["lags"]),
+        *nombres_ventanas(m["ventanas"]),
+        *COLUMNAS_BANDERAS,
+        f"y_h{m['horizon_days']}",
+        "_features_built_at",
+    ]
 
 
 def es_fin_de_semana(dia_semana: int) -> bool:
@@ -63,19 +71,32 @@ def agregar_calendario(df, festivos):
     `festivos` es un DataFrame con la columna `fecha` (date). Un left join: si un año no está en
     el archivo de referencia, es_festivo queda nulo y verificar() lo detecta.
     """
-    from pyspark.sql import functions as F  # noqa: F401
+    from pyspark.sql import functions as F
 
-    # TODO (lab 7, sección 3): implementar. Pistas: F.dayofweek, F.month, F.dayofyear,
-    # F.col("dia_semana").isin(1, 7), y un left join con festivos.select("fecha", F.lit(True)...).
-    raise NotImplementedError("agregar_calendario: completa esta función (lab 7, sección 3)")
+    marcados = festivos.select("fecha").distinct().withColumn("_festivo", F.lit(True))
+    anios = festivos.select(F.year("fecha").alias("_anio")).distinct()
+    anios = anios.withColumn("_cubierto", F.lit(True))
+    out = (
+        df.withColumn("dia_semana", F.dayofweek("fecha"))
+        .withColumn("es_fin_de_semana", F.col("dia_semana").isin(1, 7))
+        .withColumn("mes", F.month("fecha"))
+        .withColumn("dia_del_anio", F.dayofyear("fecha"))
+        .withColumn("_anio", F.year("fecha"))
+        .join(marcados, "fecha", "left")
+        .join(anios, "_anio", "left")
+    )
+    es_festivo = F.when(F.col("_cubierto"), F.coalesce(F.col("_festivo"), F.lit(False)))
+    return out.withColumn("es_festivo", es_festivo).drop("_festivo", "_anio", "_cubierto")
 
 
 def agregar_lags(df, lags: list[int]):
     """lag_k = valor de MEDIDA k días antes, dentro de la misma serie (nulo si no hay historia)."""
-    from pyspark.sql import functions as F  # noqa: F401
+    from pyspark.sql import functions as F
 
-    # TODO (lab 7, sección 4): implementar con F.lag(MEDIDA, k).over(_ventana_serie()).
-    raise NotImplementedError("agregar_lags: completa esta función (lab 7, sección 4)")
+    w = _ventana_serie()
+    for k, nombre in zip(lags, nombres_lags(lags), strict=True):
+        df = df.withColumn(nombre, F.lag(MEDIDA, k).over(w))
+    return df
 
 
 def agregar_ventanas(df, ventanas: list[int]):
@@ -84,7 +105,7 @@ def agregar_ventanas(df, ventanas: list[int]):
 
     w = _ventana_serie()
     for n in ventanas:
-        pasado = w.rowsBetween(-n, -1)
+        pasado = w.rowsBetween(-n + 1, 0)
         df = df.withColumn(f"media_{n}", F.avg(MEDIDA).over(pasado))
         df = df.withColumn(f"desv_{n}", F.stddev(MEDIDA).over(pasado))
     return df

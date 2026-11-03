@@ -44,8 +44,7 @@ def resolver_alias(columnas_rescatadas: list[str], alias: dict[str, str] = ALIAS
     >>> resolver_alias(["ValorKwh", "ColumnaDesconocida"])
     {'ValorKwh': 'Valor'}
     """
-    # TODO (lab 4, paso 4): implementar.
-    raise NotImplementedError("resolver_alias: completa esta función (lab 4, paso 4)")
+    return {c: alias[c] for c in columnas_rescatadas if c in alias}
 
 
 def normalizar(df):
@@ -69,11 +68,13 @@ def normalizar(df):
 
 def con_metadatos(df):
     """Agrega `_ingested_at`, `_source_file` (de `_metadata.file_path`) y `_publication_date`."""
-    from pyspark.sql import functions as F  # noqa: F401
+    from pyspark.sql import functions as F
 
-    # TODO (lab 4, paso 4): implementar. Pista: F.current_timestamp(), F.col("_metadata.file_path"),
-    # F.to_date("FechaPublicacion").
-    raise NotImplementedError("con_metadatos: completa esta función (lab 4, paso 4)")
+    return (
+        df.withColumn("_ingested_at", F.current_timestamp())
+        .withColumn("_source_file", F.col("_metadata.file_path"))
+        .withColumn("_publication_date", F.to_date("FechaPublicacion"))
+    )
 
 
 def ingestar_bronce(spark, landing: str, tabla: str, checkpoint: str) -> None:

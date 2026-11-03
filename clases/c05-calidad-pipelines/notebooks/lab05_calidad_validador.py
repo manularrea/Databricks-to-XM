@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # Lab 5 — Reglas de calidad, validador y cuarentena
 # MAGIC
@@ -11,7 +15,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("usuario", "")
+dbutils.widgets.text("usuario", "docente")
 usuario = dbutils.widgets.get("usuario").strip().lower()
 assert usuario, "Escribe tu usuario (el sufijo de tu esquema c01_<usuario>)."
 
@@ -52,7 +56,7 @@ from pyspark.sql import functions as F
 # MAGIC `REGLAS` es la única definición de qué es válido: nombre → (expresión SQL, acción). Léelas y responde:
 # MAGIC ¿por qué `valor_no_negativo` va a cuarentena y `valor_no_nulo` a drop?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Un valor nulo no aporta nada y no hay nada que investigar: se descarta y se cuenta. Un valor negativo sí es información: puede ser un error de signo, una medida invertida o una corrección mal aplicada; alguien de medida debe mirarlo antes de decidir. Cuarentena conserva la fila con el nombre de la regla; drop la pierde.
 
 # COMMAND ----------
 
@@ -156,7 +160,7 @@ except validador.ReglaFail as e:
 # MAGIC %md
 # MAGIC **Pregunta.** La regla `fail` detuvo todo por una sola fila. ¿Es la decisión correcta para una fecha del futuro? ¿Cuándo preferirías cuarentena?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Sí para una fecha del futuro: indica un archivo corrupto o un cambio de formato (por ejemplo, día y mes invertidos), y no queremos ninguna fila de ese archivo hasta entenderlo. Preferiría cuarentena cuando el error es plausible fila a fila (un valor fuera de rango) y el resto del archivo es confiable. La regla es: fail para lo que invalida el lote entero; cuarentena para lo que invalida la fila.
 
 # COMMAND ----------
 
@@ -215,7 +219,7 @@ ORDER BY ejecutado_en DESC, origen, regla
 # MAGIC **Pregunta.** ¿Qué cambia entre el validador por lotes y el pipeline? (reglas, quién decide el orden, dónde quedan
 # MAGIC las métricas, qué pasa con `fail`). ¿Cuál usarías en producción y por qué?
 # MAGIC
-# MAGIC _Tu respuesta:_
+# MAGIC _Tu respuesta:_ Las reglas son las mismas (`REGLAS` importado de src). Cambia quién ejecuta: el pipeline deduce el orden de las tablas, guarda las métricas en su event log y con `fail` detiene la actualización sin escribir; el validador corre donde lo llamen, escribe las métricas a una tabla y lanza una excepción. En producción usaría el pipeline: es declarativo, incremental, con métricas y reintentos integrados, y se despliega por bundle. El validador queda para pruebas y para ambientes sin pipeline.
 
 # COMMAND ----------
 

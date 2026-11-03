@@ -253,7 +253,7 @@ assert codigo == 0, "Hay pruebas de integración fallando"
 # MAGIC **Pregunta 1 (respóndela aquí):** el PR con fuga pasó `ruff` y `tests/unit` y solo falló en `tests/integration`. ¿Qué tipo de
 # MAGIC error atrapa cada nivel y por qué una prueba unitaria pura no podía detectar este? Dos o tres frases.
 # MAGIC
-# MAGIC > Tu respuesta:
+# MAGIC > Tu respuesta: ruff solo mira el texto del código (sintaxis, imports, estilo): la línea con `(-n + 1, 0)` es Python perfectamente válido. Las unitarias prueban funciones puras sin Spark: `nombres_lags`, `columnas_contrato`, `validar_config`; ninguna ejecuta una ventana de Spark, así que no pueden ver qué filas entran en el promedio. El test de integración sí construye el DataFrame, calcula `media_7` con la función real y la compara contra la ventana correcta y contra la ventana con fuga: es el único nivel que observa el comportamiento sobre datos, y por eso es el que lo detuvo.
 
 # COMMAND ----------
 
@@ -284,7 +284,7 @@ display(spark.sql(f"SELECT * FROM {T_FEATURES} VERSION AS OF {h.version} WHERE f
 # MAGIC **Pregunta 2 (respóndela aquí):** `VACUUM` con la retención por defecto (7 días) borra las versiones viejas de la tabla de oro.
 # MAGIC ¿Qué pasa con la reproducibilidad del pronóstico de hace seis meses, y qué dos opciones tiene el equipo para protegerla?
 # MAGIC
-# MAGIC > Tu respuesta:
+# MAGIC > Tu respuesta: con retención de 7 días, `VACUUM` borra los archivos de las versiones anteriores y `VERSION AS OF` de hace seis meses deja de funcionar: la tabla de oro que vio el modelo ya no se puede leer, y el pronóstico no se puede reconstruir. Dos opciones: (1) subir la retención de la tabla de oro (`delta.deletedFileRetentionDuration` y `delta.logRetentionDuration`, por ejemplo a 400 días) y aceptar el costo de almacenamiento; (2) que el entrenamiento guarde una copia inmutable de lo que usó: un `CLONE` (shallow o deep) de la versión o el DataFrame registrado como artefacto/`log_input` en MLflow (clase 9), de modo que `VACUUM` pueda correr sin perder reproducibilidad.
 
 # COMMAND ----------
 
