@@ -1,4 +1,4 @@
-# Soluciones de Analítica con Databricks — XM
+# Soluciones de Analítica con Databricks — XM 2026
 
 **Docente:** Manuela Larrea Gómez
 
