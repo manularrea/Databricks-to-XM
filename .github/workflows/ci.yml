@@ -6,7 +6,7 @@
 #                     (deploy + preparar + job diario: el chequeo de frescura es la prueba de integración)
 #
 # Los jobs que hablan con Databricks solo corren si el repo tiene la variable
-# DATABRICKS_DEPLOY=true (Settings → Secrets and variables → Actions → Variables).
+# DATABRICKS_DEPLOY=true (Settings → Secrets and variables → Actions → Variables)
 name: ci
 
 on:
