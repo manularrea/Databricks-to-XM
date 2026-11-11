@@ -8,6 +8,10 @@
 
 # COMMAND ----------
 
+# MAGIC %pip install -q lightgbm
+
+# COMMAND ----------
+
 dbutils.widgets.text("usuario", "")
 dbutils.widgets.text("ambiente", "dev")
 usuario = dbutils.widgets.get("usuario").strip().lower()
