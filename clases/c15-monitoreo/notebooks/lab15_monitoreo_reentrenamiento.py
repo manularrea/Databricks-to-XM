@@ -168,15 +168,15 @@ display(drift)
 # MAGIC %md
 # MAGIC **¿Y si el régimen cambia?** No hace falta esperar a que pase para probar el monitor. En 2026 XM reportó la demanda
 # MAGIC del SIN creciendo 5,7 %, 6,7 % y 8,8 % interanual en marzo, abril y mayo, con récord histórico en mayo y alertas por un
-# MAGIC posible Niño intenso. La celda de abajo simula un salto de 9 % en la demanda del mercado regulado durante la semana
-# MAGIC actual. No toca ninguna tabla: es una copia en memoria.
+# MAGIC posible Niño intenso. La celda de abajo simula un salto de 9 % en la demanda de **todas** las series durante la
+# MAGIC semana actual. No toca ninguna tabla: es una copia en memoria. (Si lo aplicaras solo al mercado regulado, que es menos
+# MAGIC del 10 % de las series, el PSI agregado casi no se movería: el promedio también esconde en el drift.)
 
 # COMMAND ----------
 
 simulada = act.copy()
-regulado = simulada["tipo_mercado"] == "Regulado"
 for c in ("demanda_real_kwh_rel", "lag_7_rel"):
-    simulada.loc[regulado, c] = simulada.loc[regulado, c] * 1.09
+    simulada[c] = simulada[c] * 1.09
 display(mon.drift_features(ref, simulada, M["columnas_drift"], moderado=M["psi_moderado"], alto=M["psi_alto"]))
 
 # COMMAND ----------
@@ -335,7 +335,7 @@ if PROBAR_PERFILADO:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Pregunta 1 (respóndela aquí):** supón que el PSI de la semana sube a 0,31, como en la simulación, pero el WAPE
+# MAGIC **Pregunta 1 (respóndela aquí):** supón que el PSI de la semana sube a 0,5, como en la simulación, pero el WAPE
 # MAGIC observado todavía está en 4,9 %. La política dice "reentrenar". ¿Lo harías? ¿Qué riesgo corres si reentrenas con solo una semana del
 # MAGIC régimen nuevo, y qué te protege de ese riesgo en este diseño?
 # MAGIC
