@@ -109,7 +109,7 @@ dias = (fin - pd.Timestamp(lin["datos_hasta"])).days if lin["datos_hasta"] else 
 decision = decidir_reentrenamiento(wape["champion"], lin["wape_validacion"], float(drift["psi"].max()), dias, M)
 fila = {"calculado_en": calculado, "fecha_datos": fin.date(), "ambiente": ambiente, "modelo_version": int(mv.version),
         "wape_reciente": wape["champion"], "wape_referencia": lin["wape_validacion"], "psi_max": float(drift["psi"].max()),
-        "dias_desde_entrenamiento": dias, "reentrenar": decision["reentrenar"], "motivos": " | ".join(decision["motivos"])}
+        "dias_desde_entrenamiento": dias, "tolerancia_degradacion": M["tolerancia_degradacion"], "reentrenar": decision["reentrenar"], "motivos": " | ".join(decision["motivos"])}
 spark.createDataFrame(pd.DataFrame([fila])).write.mode("append").option("mergeSchema", "true").saveAsTable(T_DECISIONES)
 dbutils.jobs.taskValues.set(key="reentrenar", value="si" if decision["reentrenar"] else "no")
 dbutils.jobs.taskValues.set(key="motivos", value=fila["motivos"] or "ninguno")

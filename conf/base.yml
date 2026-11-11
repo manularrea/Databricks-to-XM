@@ -22,7 +22,7 @@ llave_serie: [codigo_sic_agente, mercado_comercializacion, tipo_mercado, clasifi
 monitoreo:
   ventana_reciente_dias: 7          # error "de ahora"
   ventana_referencia_dias: 56       # contra qué se compara el drift
-  tolerancia_degradacion: 0.20      # reentrenar si WAPE reciente > WAPE de validación × 1,20
+  tolerancia_degradacion: 0.15      # reentrenar si WAPE reciente > WAPE de validación × 1,15
   umbral_critico: 2.0               # la tarea falla (alerta) si WAPE reciente > 2 × referencia
   psi_moderado: 0.10
   psi_alto: 0.25

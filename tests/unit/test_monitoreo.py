@@ -77,8 +77,9 @@ def test_cada_disparador_basta(args, palabra):
 
 
 def test_la_tolerancia_es_relativa():
-    assert not _decidir(0.059, 0.05, 0.0, 0, U)["reentrenar"]  # +18 % < 20 %
-    assert _decidir(0.061, 0.05, 0.0, 0, U)["reentrenar"]  # +22 %
+    tol = U["tolerancia_degradacion"]  # la regla vive en conf/base.yml; el test no la repite
+    assert not _decidir(0.05 * (1 + tol) - 0.001, 0.05, 0.0, 0, U)["reentrenar"]
+    assert _decidir(0.05 * (1 + tol) + 0.001, 0.05, 0.0, 0, U)["reentrenar"]
 
 
 def test_nan_no_dispara():

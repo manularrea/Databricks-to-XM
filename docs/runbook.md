@@ -10,7 +10,7 @@ Qué hacer cuando suena una alerta. Se lee a las 6:15 de un lunes festivo: frase
 | SLO | Objetivo | Se mide en |
 |---|---|---|
 | Frescura | pronóstico publicable antes de las 8:00 el 95 % de los días hábiles | tarea `chequeo` |
-| Calidad | WAPE 7 días del champion ≤ 5,8 % (validación 4,8 % + 20 %) | `monitoreo_error` |
+| Calidad | WAPE 7 días del champion ≤ 5,5 % (validación 4,8 % + 15 %) | `monitoreo_error` |
 | Estabilidad | PSI < 0,25 en las features monitoreadas | `monitoreo_drift` |
 
 ## Alertas
